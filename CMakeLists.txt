@@ -5,7 +5,7 @@
 ###############################################################
 
 cmake_minimum_required (VERSION 2.8 FATAL_ERROR)
-project(object_cp_gen)
+project(grasp_arm_sim)
 
 # Clasify sources according to folder structure.
 # This creates a nice layout for the project in visual studio

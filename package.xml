@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>object_cp_gen</name>
+  <name>grasp_arm_sim</name>
   <version>0.0.1</version>
   <description> test </description>
 
