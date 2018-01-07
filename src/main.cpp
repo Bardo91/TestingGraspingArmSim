@@ -10,6 +10,11 @@
 
 #include <grasping_tools/grasping_tools.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/io.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/vtk_lib_io.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/common/transforms.h>
 
 #include <arm_controller/visualization/ArmVis.h>
 #include <arm_controller/Arm.h>
@@ -28,6 +33,9 @@ void callback(const pcl::visualization::KeyboardEvent & _event, void * _ptrViewe
 
 int main(int _argc, char**_argv){
     grasping_tools::ObjectMesh object(_argv[1]);
+    pcl::PolygonMesh gripperModel;
+    bool displayGripper = pcl::io::loadPolygonFileSTL("/home/bardo91/programming/catkin_grasping/src/hecatonquiros/cad_models/tools/gripper/pwm_model/stl/gripper_complete.stl", gripperModel) != 0;
+    
     pcl::PolygonMesh mesh;
     arma::mat44 poseObj = arma::eye(4,4);
     poseObj(0,3) = 0.25;
@@ -71,7 +79,7 @@ int main(int _argc, char**_argv){
             arma::mat candidatePoints = grasping_tools::pointsInCircle( 0.2,
                                                                         (cps[0].position() + cps[1].position())/2,
                                                                         cps[0].normal(),
-                                                                        40);
+                                                                        100);
 
             pcl::PointCloud<pcl::PointXYZRGB> candidatePointsPcl;
 
@@ -111,6 +119,18 @@ int main(int _argc, char**_argv){
                             tfs[0]*tfs[1]*tfs[2]);
 
                 viewer.addCoordinateSystem(0.1,Eigen::Affine3f(tfs[0]*tfs[1]*tfs[2]), "endEffectorAxis");
+                if(displayGripper){
+                    Eigen::Matrix4f toolTf = Eigen::Matrix4f::Identity();
+                    toolTf(0,3) = 0.2;
+                    Eigen::Matrix4f finalTf = tfs[0]*tfs[1]*tfs[2]*toolTf;
+
+                    pcl::PointCloud<pcl::PointXYZ> newPoints;
+                    pcl::fromPCLPointCloud2(gripperModel.cloud, newPoints);
+                    for(auto &p: newPoints) { p.x /=1000; p.y /=1000;  p.z /=1000;}
+                    pcl::transformPointCloud(newPoints, newPoints, finalTf);
+                    viewer.addPolygonMesh<pcl::PointXYZ>(newPoints.makeShared(), gripperModel.polygons, "tool", 0);
+                }
+
             }else{
                 std::cout << "Failed to find grasp" << std::endl;
                 std::vector<Eigen::Matrix4f> tfs;
